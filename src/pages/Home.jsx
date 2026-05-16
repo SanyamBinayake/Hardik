@@ -35,15 +35,15 @@ const Home = () => {
       {/* Hero Section */}
       <section className="relative h-[600px] flex items-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=2000" 
-            alt="Grocery Store" 
+          <img
+            src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=2000"
+            alt="Grocery Store"
             className="w-full h-full object-cover brightness-[0.4]"
           />
         </div>
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-white">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -57,7 +57,7 @@ const Home = () => {
               <span className="text-primary text-secondary">Provision Store</span>
             </h1>
             <p className="text-lg md:text-xl text-slate-200 mb-10 leading-relaxed max-w-lg">
-              Fresh quality groceries delivered to your home. 
+              Fresh quality groceries delivered to your home.
               <span className="block mt-2 font-semibold text-white italic">
                 “30 minutes delivery guarantee — If your order is delayed beyond 30 minutes, get 10% discount!”
               </span>
@@ -107,11 +107,11 @@ const Home = () => {
             See All <ArrowRight className="ml-1 w-4 h-4" />
           </Link>
         </div>
-        
+
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
           {categories.map((category) => (
-            <Link 
-              key={category.id} 
+            <Link
+              key={category.id}
               to={`/catalog?category=${category.slug}`}
               className="group"
             >
@@ -135,9 +135,9 @@ const Home = () => {
             <p className="text-xl text-emerald-50 mb-8 opacity-90">
               Get up to 20% off on all Pulses and Spices. Free home delivery on your first order.
             </p>
-            <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/30 w-fit font-mono font-bold">
+            {/* <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/30 w-fit font-mono font-bold">
               CODE: HEMPADM10
-            </div>
+            </div> */}
           </div>
           <div className="absolute right-[-10%] top-[-20%] w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl opacity-50"></div>
         </div>
@@ -151,7 +151,7 @@ const Home = () => {
             <p className="text-slate-500">Best sellers chosen for you</p>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {featuredProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
