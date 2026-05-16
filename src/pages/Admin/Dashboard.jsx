@@ -51,7 +51,8 @@ const AdminDashboard = () => {
         const delivered = orders.filter(o => o.status === 'delivered').length
 
         setStats({ totalOrders, revenue, pending, delivered })
-        setRecentOrders(orders.slice(0, 8).sort((a, b) => new Date(b.created_at) - new Date(a.created_at)))
+        const sortedOrders = [...orders].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+        setRecentOrders(sortedOrders.slice(0, 8))
       }
     } catch (error) {
       console.error('Error fetching stats:', error)

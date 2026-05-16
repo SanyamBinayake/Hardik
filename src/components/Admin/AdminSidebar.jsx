@@ -7,7 +7,9 @@ import {
   LogOut, 
   Home, 
   ChevronLeft,
-  Store
+  Store,
+  Tag,
+  Layout
 } from 'lucide-react'
 
 const AdminSidebar = () => {
@@ -22,7 +24,9 @@ const AdminSidebar = () => {
   const menuItems = [
     { name: 'Dashboard', icon: Grid, path: '/admin/dashboard' },
     { name: 'Products', icon: Package, path: '/admin/products' },
+    { name: 'Categories', icon: Layout, path: '/admin/categories' },
     { name: 'Orders', icon: ShoppingBag, path: '/admin/orders' },
+    { name: 'Offers', icon: Tag, path: '/admin/offers' },
   ]
 
   return (

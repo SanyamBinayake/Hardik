@@ -20,6 +20,7 @@ const AdminProducts = () => {
     category_id: '',
     description: '',
     stock_quantity: 0,
+    is_available: true,
     is_featured: false,
     is_best_seller: false,
     image_url: ''
@@ -129,6 +130,7 @@ const AdminProducts = () => {
       category_id: '',
       description: '',
       stock_quantity: 0,
+      is_available: true,
       is_featured: false,
       is_best_seller: false,
       image_url: ''
@@ -146,6 +148,7 @@ const AdminProducts = () => {
       category_id: product.category_id,
       description: product.description || '',
       stock_quantity: product.stock_quantity,
+      is_available: product.is_available,
       is_featured: product.is_featured,
       is_best_seller: product.is_best_seller,
       image_url: product.image_url || ''
@@ -211,12 +214,13 @@ const AdminProducts = () => {
                     </td>
                     <td className="px-10 py-6 text-center">
                       <span className={`inline-flex items-center justify-center min-w-[3rem] py-1.5 rounded-xl text-xs font-black ${
-                        product.stock_quantity > 10 
+                        product.is_available && product.stock_quantity > 0
                         ? 'text-emerald-600 bg-emerald-50 border border-emerald-100' 
                         : 'text-red-600 bg-red-50 border border-red-100'
                       }`}>
-                        {product.stock_quantity}
+                        {product.is_available && product.stock_quantity > 0 ? 'In Stock' : 'Out of Stock'}
                       </span>
+                      <p className="text-[10px] text-slate-400 mt-1 font-bold">Qty: {product.stock_quantity}</p>
                     </td>
                     <td className="px-10 py-6 text-right">
                       <div className="flex justify-end space-x-2">
@@ -321,6 +325,14 @@ const AdminProducts = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-8 py-2">
+                  <label className="flex items-center space-x-3 cursor-pointer group">
+                    <div className="relative">
+                      <input type="checkbox" name="is_available" className="sr-only" checked={formData.is_available} onChange={handleInputChange} />
+                      <div className={`w-12 h-6 rounded-full transition-colors ${formData.is_available ? 'bg-primary' : 'bg-slate-200'}`}></div>
+                      <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${formData.is_available ? 'translate-x-6' : ''}`}></div>
+                    </div>
+                    <span className="text-sm font-bold text-slate-700">Available for Sale</span>
+                  </label>
                   <label className="flex items-center space-x-3 cursor-pointer group">
                     <div className="relative">
                       <input type="checkbox" name="is_featured" className="sr-only" checked={formData.is_featured} onChange={handleInputChange} />

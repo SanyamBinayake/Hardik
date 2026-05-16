@@ -8,6 +8,7 @@ import ProductCard from '../components/Product/ProductCard'
 const Home = () => {
   const [categories, setCategories] = useState([])
   const [featuredProducts, setFeaturedProducts] = useState([])
+  const [offers, setOffers] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -16,13 +17,15 @@ const Home = () => {
 
   const fetchData = async () => {
     try {
-      const [catRes, prodRes] = await Promise.all([
+      const [catRes, prodRes, offerRes] = await Promise.all([
         supabase.from('categories').select('*'),
-        supabase.from('products').select('*').eq('is_featured', true).limit(4)
+        supabase.from('products').select('*').eq('is_featured', true).limit(4),
+        supabase.from('offers').select('*').eq('is_active', true)
       ])
 
       if (catRes.data) setCategories(catRes.data)
       if (prodRes.data) setFeaturedProducts(prodRes.data)
+      if (offerRes.data) setOffers(offerRes.data)
     } catch (error) {
       console.error('Error fetching home data:', error)
     } finally {
@@ -36,8 +39,8 @@ const Home = () => {
       <section className="relative h-[600px] flex items-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
-            src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=2000"
-            alt="Grocery Store"
+            src="https://images.unsplash.com/photo-1534723452862-4c874018d66d?auto=format&fit=crop&q=80&w=2000"
+            alt="Hem Padmavati Provision Store"
             className="w-full h-full object-cover brightness-[0.4]"
           />
         </div>
@@ -127,20 +130,9 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Offer Banner */}
+      {/* Offer Banner Slider */}
       <section id="offers" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-500 rounded-[2.5rem] p-10 md:p-16 relative overflow-hidden text-white shadow-2xl shadow-emerald-200">
-          <div className="relative z-10 max-w-xl">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Big Saving Days!</h2>
-            <p className="text-xl text-emerald-50 mb-8 opacity-90">
-              Get up to 20% off on all Pulses and Spices. Free home delivery on your first order.
-            </p>
-            {/* <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/30 w-fit font-mono font-bold">
-              CODE: HEMPADM10
-            </div> */}
-          </div>
-          <div className="absolute right-[-10%] top-[-20%] w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl opacity-50"></div>
-        </div>
+        <OfferSlider offers={offers} />
       </section>
 
       {/* Featured Products */}
@@ -158,6 +150,82 @@ const Home = () => {
           ))}
         </div>
       </section>
+    </div>
+  )
+}
+
+const OfferSlider = ({ offers }) => {
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  useEffect(() => {
+    if (offers.length <= 1) return
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % offers.length)
+    }, 5000)
+    return () => clearInterval(timer)
+  }, [offers.length])
+
+  if (offers.length === 0) {
+    return (
+      <div className="bg-gradient-to-r from-emerald-600 to-teal-500 rounded-[2.5rem] p-10 md:p-16 relative overflow-hidden text-white shadow-2xl shadow-emerald-200">
+        <div className="relative z-10 max-w-xl">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">Big Saving Days!</h2>
+          <p className="text-xl text-emerald-50 mb-8 opacity-90">
+            Get up to 20% off on all Pulses and Spices. Free home delivery on your first order.
+          </p>
+        </div>
+        <div className="absolute right-[-10%] top-[-20%] w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl opacity-50"></div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative group overflow-hidden rounded-[2.5rem]">
+      <div className="flex transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
+        {offers.map((offer) => (
+          <div key={offer.id} className="min-w-full bg-gradient-to-r from-emerald-600 to-teal-500 p-10 md:p-16 relative text-white">
+            <div className="relative z-10 max-w-xl">
+              <span className="bg-white/20 backdrop-blur-md px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 inline-block border border-white/30">
+                Exclusive Store Offer
+              </span>
+              <motion.h2 
+                key={`title-${currentIndex}`}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-4xl md:text-5xl font-black mb-6 leading-tight"
+              >
+                {offer.title}
+              </motion.h2>
+              <motion.p 
+                key={`desc-${currentIndex}`}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+                className="text-xl text-emerald-50 mb-8 opacity-90 font-medium leading-relaxed"
+              >
+                {offer.description}
+              </motion.p>
+              <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/30 w-fit font-bold shadow-sm">
+                Min Order: ₹{offer.min_order_amount}
+              </div>
+            </div>
+            <div className="absolute right-[-10%] top-[-20%] w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl opacity-50"></div>
+          </div>
+        ))}
+      </div>
+
+      {/* Dots Indicator */}
+      {offers.length > 1 && (
+        <div className="absolute bottom-8 left-10 md:left-16 z-20 flex space-x-2">
+          {offers.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentIndex(idx)}
+              className={`h-1.5 rounded-full transition-all duration-300 ${currentIndex === idx ? 'w-8 bg-white' : 'w-2 bg-white/40 hover:bg-white/60'}`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Truck, CheckCircle2, AlertCircle, ShoppingBag, CreditCard } from 'lucide-react'
 import { useCartStore } from '../store/useCartStore'
@@ -9,7 +9,7 @@ const Checkout = () => {
   const { items, getTotalPrice, getDeliveryCharge, getFinalAmount, clearCart } = useCartStore()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
-  
+
   const [formData, setFormData] = useState({
     customerName: '',
     phoneNumber: '',
@@ -17,6 +17,14 @@ const Checkout = () => {
     pincode: '',
     orderNotes: ''
   })
+
+  // Load saved details on mount
+  useEffect(() => {
+    const savedData = localStorage.getItem('hp_customer_data')
+    if (savedData) {
+      setFormData(prev => ({ ...prev, ...JSON.parse(savedData) }))
+    }
+  }, [])
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -62,12 +70,55 @@ const Checkout = () => {
 
       if (itemsError) throw itemsError
 
-      // 3. Success
+      // 3. Update Inventory
+      for (const item of items) {
+        const { error: stockError } = await supabase.rpc('decrement_stock', {
+          product_id: item.id,
+          qty: item.quantity
+        })
+
+        // If RPC is not set up, use a simple update
+        if (stockError) {
+          await supabase
+            .from('products')
+            .update({ stock_quantity: Math.max(0, (item.stock_quantity || 0) - item.quantity) })
+            .eq('id', item.id)
+        }
+      }
+
+      // 4. Generate WhatsApp Message
+      const message = encodeURIComponent(
+        `NEW ORDER - HEM PADMAVATI STORE\n` +
+        `------------------------------------\n\n` +
+        `Customer: ${formData.customerName}\n` +
+        `Contact: ${formData.phoneNumber}\n` +
+        `Address: ${formData.address}, ${formData.pincode}\n\n` +
+        `ORDER DETAILS:\n${items.map(i => `- ${i.name} (x${i.quantity})`).join('\n')}\n\n` +
+        `Total Amount: Rs. ${getFinalAmount().toFixed(2)}\n` +
+        `Notes: ${formData.orderNotes || 'None'}\n\n` +
+        `------------------------------------\n` +
+        `Please confirm this order. Thank you!`
+      )
+      const whatsappUrl = `https://wa.me/918379031999?text=${message}`
+
+      // 5. Success
       toast.success('Order placed successfully!', {
         duration: 5000,
         style: { borderRadius: '1rem', background: '#10b981', color: '#fff' }
       })
+
+      // Save data for next time (excluding notes)
+      localStorage.setItem('hp_customer_data', JSON.stringify({
+        customerName: formData.customerName,
+        phoneNumber: formData.phoneNumber,
+        address: formData.address,
+        pincode: formData.pincode
+      }))
+
       clearCart()
+
+      // Open WhatsApp and redirect
+      window.open(whatsappUrl, '_blank')
       navigate('/success', { state: { orderId: order.id } })
     } catch (error) {
       console.error('Checkout error:', error)

@@ -19,7 +19,7 @@ const Footer = () => {
               Your trusted local kirana store in Lonar. We provide high-quality groceries, oils, and pulses delivered right to your doorstep within 30 minutes.
             </p>
             <div className="flex space-x-4">
-              <a href="https://wa.me/91XXXXXXXXXX" className="p-2 rounded-full bg-slate-800 hover:bg-emerald-600 transition-colors">
+              <a href="https://wa.me/918379031999" className="p-2 rounded-full bg-slate-800 hover:bg-emerald-600 transition-colors">
                 <MessageCircle className="w-5 h-5 text-white" />
               </a>
             </div>
@@ -42,15 +42,15 @@ const Footer = () => {
             <ul className="space-y-4 text-sm">
               <li className="flex items-start space-x-3">
                 <MapPin className="w-5 h-5 text-primary shrink-0" />
-                <span>Main Road, Near Bus Stand, Lonar, Maharashtra</span>
+                <span>Sarafa Bazar, Lonar, Maharashtra</span>
               </li>
               <li className="flex items-center space-x-3">
                 <Phone className="w-5 h-5 text-primary shrink-0" />
-                <span>+91 98765 43210</span>
+                <span>+91 83790 31999</span>
               </li>
               <li className="flex items-center space-x-3">
                 <Mail className="w-5 h-5 text-primary shrink-0" />
-                <span>support@hempadmavati.com</span>
+                <span>hsancheti1420@gmail.com</span>
               </li>
             </ul>
           </div>
@@ -63,8 +63,8 @@ const Footer = () => {
                 <Clock className="w-5 h-5 text-secondary" />
                 <span className="text-white font-medium">Open Every Day</span>
               </div>
-              <p className="text-sm text-slate-400 mb-2">Morning: 8:00 AM - 1:00 PM</p>
-              <p className="text-sm text-slate-400">Evening: 4:00 PM - 9:00 PM</p>
+              <p className="text-sm text-slate-400 mb-2">Morning: 8:30 AM - 2:00 PM</p>
+              <p className="text-sm text-slate-400">Evening: 3:30 PM - 9:00 PM</p>
               <div className="mt-4 pt-4 border-t border-slate-700/50 text-xs text-primary font-semibold uppercase tracking-wider">
                 30 Min Fast Delivery in Lonar
               </div>

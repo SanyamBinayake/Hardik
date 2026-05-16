@@ -103,9 +103,10 @@ const AdminOrders = () => {
                         order.status === 'delivered' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
                         order.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
                         order.status === 'processing' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                        order.status === 'shipped' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
                         'bg-red-50 text-red-600 border-red-100'
                       }`}>
-                        {order.status}
+                        {order.status === 'shipped' ? 'Out for Delivery' : order.status}
                       </span>
                     </td>
                     <td className="px-10 py-6 text-center">
@@ -209,23 +210,32 @@ const AdminOrders = () => {
                   <p className="text-[10px] font-black text-slate-500 mb-1 uppercase tracking-widest">Update Delivery Status</p>
                   <p className="text-xl font-black text-white uppercase tracking-tight">{selectedOrder.status}</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
                   {selectedOrder.status === 'pending' && (
                     <button 
                       onClick={() => updateOrderStatus(selectedOrder.id, 'processing')}
-                      className="btn btn-primary py-4 px-8 font-black uppercase text-xs tracking-widest"
+                      className="btn btn-primary py-4 px-8 font-black uppercase text-xs tracking-widest bg-blue-500 hover:bg-blue-600"
                     >
-                      <Truck className="w-4 h-4 mr-2" />
-                      Start Delivery
+                      <Clock className="w-4 h-4 mr-2" />
+                      Start Packing
                     </button>
                   )}
                   {selectedOrder.status === 'processing' && (
                     <button 
+                      onClick={() => updateOrderStatus(selectedOrder.id, 'shipped')}
+                      className="btn btn-primary py-4 px-8 font-black uppercase text-xs tracking-widest bg-amber-500 hover:bg-amber-600 border-none"
+                    >
+                      <Truck className="w-4 h-4 mr-2" />
+                      Ship Order
+                    </button>
+                  )}
+                  {selectedOrder.status === 'shipped' && (
+                    <button 
                       onClick={() => updateOrderStatus(selectedOrder.id, 'delivered')}
-                      className="btn bg-emerald-500 text-white hover:bg-emerald-600 py-4 px-8 font-black uppercase text-xs tracking-widest"
+                      className="btn bg-emerald-500 text-white hover:bg-emerald-600 py-4 px-8 font-black uppercase text-xs tracking-widest border-none"
                     >
                       <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Complete Order
+                      Mark Delivered
                     </button>
                   )}
                   <button 
