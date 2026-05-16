@@ -1,0 +1,45 @@
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
+import Navbar from './components/Layout/Navbar'
+import Footer from './components/Layout/Footer'
+import Home from './pages/Home'
+import Catalog from './pages/Catalog'
+import ProductDetails from './pages/ProductDetails'
+import Cart from './pages/Cart'
+import Checkout from './pages/Checkout'
+import Success from './pages/Success'
+import AdminLogin from './pages/Admin/Login'
+import AdminDashboard from './pages/Admin/Dashboard'
+import AdminProducts from './pages/Admin/Products'
+import AdminOrders from './pages/Admin/Orders'
+
+function App() {
+  return (
+    <Router>
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <main className="flex-grow">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/catalog" element={<Catalog />} />
+            <Route path="/product/:slug" element={<ProductDetails />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/success" element={<Success />} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/products" element={<AdminProducts />} />
+            <Route path="/admin/orders" element={<AdminOrders />} />
+          </Routes>
+        </main>
+        <Footer />
+        <Toaster position="bottom-right" />
+      </div>
+    </Router>
+  )
+}
+
+export default App
