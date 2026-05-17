@@ -1,23 +1,67 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ShoppingCart, Search, User, Menu, X, MapPin } from 'lucide-react'
+import { ShoppingCart, Search, User, Menu, X, MapPin, Globe, ChevronDown } from 'lucide-react'
 import { useCartStore } from '../../store/useCartStore'
+import { supabase } from '../../lib/supabase'
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [liveResults, setLiveResults] = useState([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [currentLang, setCurrentLang] = useState('en')
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false)
   const navigate = useNavigate()
   const { items } = useCartStore()
 
   const cartCount = items.reduce((total, item) => total + item.quantity, 0)
 
   const handleSearch = (e) => {
-    e.preventDefault()
+    if (e) e.preventDefault()
     if (searchQuery.trim()) {
+      setShowDropdown(false)
       navigate(`/catalog?search=${encodeURIComponent(searchQuery)}`)
       setIsMenuOpen(false)
     }
   }
+
+  const handleLanguageChange = (langCode) => {
+    setCurrentLang(langCode)
+    setIsLangMenuOpen(false)
+    setIsMenuOpen(false)
+    
+    // Find the Google Translate combo box and trigger change
+    const googleSelect = document.querySelector('.goog-te-combo')
+    if (googleSelect) {
+      googleSelect.value = langCode
+      googleSelect.dispatchEvent(new Event('change'))
+    }
+  }
+
+  React.useEffect(() => {
+    const fetchLiveResults = async () => {
+      if (searchQuery.trim().length < 2) {
+        setLiveResults([])
+        setShowDropdown(false)
+        return
+      }
+      
+      setIsSearching(true)
+      setShowDropdown(true)
+      const { data } = await supabase
+        .from('products')
+        .select('id, name, slug, price, image_url')
+        .ilike('name', `%${searchQuery}%`)
+        .limit(5)
+      
+      setLiveResults(data || [])
+      setIsSearching(false)
+    }
+
+    const timeoutId = setTimeout(fetchLiveResults, 300)
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery])
 
   return (
     <nav className="sticky top-0 z-50 glass border-b border-slate-200">
@@ -35,7 +79,7 @@ const Navbar = () => {
           </Link>
 
           {/* Search Bar - Desktop */}
-          <div className="hidden md:flex flex-grow max-w-xl mx-8">
+          <div className="hidden md:flex flex-grow max-w-xl mx-8 relative">
             <form onSubmit={handleSearch} className="w-full relative">
               <input
                 type="text"
@@ -43,11 +87,46 @@ const Navbar = () => {
                 className="input pr-12 w-full"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => searchQuery.trim().length >= 2 && setShowDropdown(true)}
+                onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
               />
               <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-primary transition-colors">
                 <Search className="w-5 h-5" />
               </button>
             </form>
+
+            {/* Live Search Dropdown */}
+            {showDropdown && (
+              <div className="absolute top-full mt-2 w-full bg-white rounded-2xl shadow-premium border border-slate-100 overflow-hidden z-50">
+                {isSearching ? (
+                  <div className="p-4 text-center text-sm text-slate-500 font-medium">Searching...</div>
+                ) : liveResults.length > 0 ? (
+                  <div className="py-2">
+                    {liveResults.map(product => (
+                      <Link 
+                        key={product.id}
+                        to={`/product/${product.slug}`}
+                        className="flex items-center px-4 py-3 hover:bg-slate-50 transition-colors"
+                      >
+                        <img src={product.image_url || 'https://via.placeholder.com/40'} alt="" className="w-10 h-10 object-contain bg-white rounded-lg border border-slate-100 mr-3 p-1" />
+                        <div className="flex-grow">
+                          <p className="text-sm font-bold text-slate-800 truncate">{product.name}</p>
+                          <p className="text-xs text-primary font-bold">₹{product.price}</p>
+                        </div>
+                      </Link>
+                    ))}
+                    <div 
+                      className="border-t border-slate-50 p-3 text-center text-xs font-bold text-primary cursor-pointer hover:bg-slate-50 uppercase tracking-wider"
+                      onClick={() => handleSearch()}
+                    >
+                      View all results
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-sm text-slate-500 font-medium">No products found</div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Location & Links */}
@@ -61,6 +140,35 @@ const Navbar = () => {
               Track Order
             </Link>
             
+            {/* Language Switcher */}
+            <div className="relative">
+              <button 
+                onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
+                className="flex items-center space-x-1 text-xs font-black uppercase tracking-widest text-slate-500 hover:text-primary transition-all p-2 rounded-xl hover:bg-slate-100"
+              >
+                <Globe className="w-4 h-4" />
+                <span>{currentLang === 'en' ? 'EN' : 'मराठी'}</span>
+                <ChevronDown className="w-3 h-3" />
+              </button>
+
+              {isLangMenuOpen && (
+                <div className="absolute right-0 mt-2 w-32 bg-white rounded-2xl shadow-premium border border-slate-100 overflow-hidden z-50">
+                  <button 
+                    onClick={() => handleLanguageChange('en')}
+                    className={`w-full text-left px-4 py-3 text-sm font-bold transition-colors ${currentLang === 'en' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50'}`}
+                  >
+                    English
+                  </button>
+                  <button 
+                    onClick={() => handleLanguageChange('mr')}
+                    className={`w-full text-left px-4 py-3 text-sm font-bold transition-colors border-t border-slate-50 ${currentLang === 'mr' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50'}`}
+                  >
+                    मराठी
+                  </button>
+                </div>
+              )}
+            </div>
+
             <Link to="/admin/login" className="text-slate-500 hover:text-primary transition-colors p-2 rounded-full hover:bg-slate-100">
               <User className="w-6 h-6" />
             </Link>
@@ -136,6 +244,22 @@ const Navbar = () => {
                 Admin
               </Link>
             </div>
+            {/* Mobile Language Switcher */}
+            <div className="grid grid-cols-2 gap-4">
+              <button 
+                onClick={() => handleLanguageChange('en')}
+                className={`flex items-center justify-center p-3 rounded-2xl font-bold text-sm transition-colors ${currentLang === 'en' ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-slate-50 text-slate-600'}`}
+              >
+                English
+              </button>
+              <button 
+                onClick={() => handleLanguageChange('mr')}
+                className={`flex items-center justify-center p-3 rounded-2xl font-bold text-sm transition-colors ${currentLang === 'mr' ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-slate-50 text-slate-600'}`}
+              >
+                मराठी
+              </button>
+            </div>
+
             <div className="flex items-center justify-center text-slate-500 space-x-2 py-2">
               <MapPin className="w-4 h-4 text-primary" />
               <span className="text-sm">Delivering in Sarafa Bazar, Lonar</span>

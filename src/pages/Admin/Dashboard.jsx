@@ -22,7 +22,8 @@ const AdminDashboard = () => {
     totalOrders: 0,
     revenue: 0,
     pending: 0,
-    delivered: 0
+    delivered: 0,
+    totalProducts: 0
   })
   const [recentOrders, setRecentOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -42,7 +43,13 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const { data: orders } = await supabase.from('orders').select('*')
+      const [ordersRes, productsRes] = await Promise.all([
+        supabase.from('orders').select('*'),
+        supabase.from('products').select('*', { count: 'exact', head: true })
+      ])
+
+      const orders = ordersRes.data || []
+      const totalProducts = productsRes.count || 0
 
       if (orders) {
         const totalOrders = orders.length
@@ -50,7 +57,7 @@ const AdminDashboard = () => {
         const pending = orders.filter(o => o.status === 'pending').length
         const delivered = orders.filter(o => o.status === 'delivered').length
 
-        setStats({ totalOrders, revenue, pending, delivered })
+        setStats({ totalOrders, revenue, pending, delivered, totalProducts })
         const sortedOrders = [...orders].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
         setRecentOrders(sortedOrders.slice(0, 8))
       }
@@ -66,16 +73,16 @@ const AdminDashboard = () => {
     navigate('/admin/login')
   }
 
-  const StatCard = ({ icon: Icon, title, value, color, trend }) => (
-    <div className="card p-8 flex items-center space-x-6 border-none shadow-premium bg-white group hover:scale-[1.02] transition-all duration-300">
-      <div className={`p-5 rounded-[1.5rem] ${color} bg-opacity-10 group-hover:bg-opacity-20 transition-all`}>
-        <Icon className={`w-8 h-8 ${color.replace('bg-', 'text-')}`} />
+  const StatCard = ({ icon: Icon, title, value, bgColor, textColor, trend }) => (
+    <div className="card p-6 flex items-center space-x-5 border border-slate-100 shadow-sm bg-white group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer rounded-[2rem]">
+      <div className={`p-4 rounded-2xl ${bgColor} transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6`}>
+        <Icon className={`w-8 h-8 ${textColor}`} />
       </div>
       <div>
-        <p className="text-slate-400 text-xs font-black uppercase tracking-widest mb-1">{title}</p>
-        <p className="text-3xl font-black text-slate-900 tracking-tight">{value}</p>
+        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">{title}</p>
+        <p className="text-2xl font-black text-slate-900 tracking-tight">{value}</p>
         {trend && (
-          <div className="flex items-center text-[10px] font-bold text-emerald-500 mt-2">
+          <div className="flex items-center text-[10px] font-bold text-emerald-500 mt-1">
             <TrendingUp className="w-3 h-3 mr-1" />
             <span>{trend}</span>
           </div>
@@ -89,7 +96,7 @@ const AdminDashboard = () => {
       <AdminSidebar />
 
       {/* Main Content */}
-      <main className="flex-grow p-10 overflow-y-auto">
+      <main className="flex-grow p-4 md:p-10 overflow-y-auto w-full">
         <header className="flex justify-between items-center mb-12">
           <div>
             <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Store Analytics</h1>
@@ -107,11 +114,12 @@ const AdminDashboard = () => {
         </header>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-          <StatCard icon={ShoppingBag} title="Total Orders" value={stats.totalOrders} color="bg-emerald-500" trend="+12% this week" />
-          <StatCard icon={DollarSign} title="Total Revenue" value={`₹${stats.revenue.toLocaleString()}`} color="bg-amber-500" trend="+8% this month" />
-          <StatCard icon={Clock} title="Pending Tasks" value={stats.pending} color="bg-blue-500" />
-          <StatCard icon={CheckCircle2} title="Completed" value={stats.delivered} color="bg-indigo-500" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
+          <StatCard icon={ShoppingBag} title="Total Orders" value={stats.totalOrders} bgColor="bg-emerald-100" textColor="text-emerald-600" trend="+12% this week" />
+          <StatCard icon={Package} title="Total Products" value={stats.totalProducts} bgColor="bg-purple-100" textColor="text-purple-600" />
+          <StatCard icon={DollarSign} title="Total Revenue" value={`₹${stats.revenue.toLocaleString()}`} bgColor="bg-amber-100" textColor="text-amber-600" trend="+8% this month" />
+          <StatCard icon={Clock} title="Pending Tasks" value={stats.pending} bgColor="bg-blue-100" textColor="text-blue-600" />
+          <StatCard icon={CheckCircle2} title="Completed" value={stats.delivered} bgColor="bg-indigo-100" textColor="text-indigo-600" />
         </div>
 
         {/* Recent Orders Table */}

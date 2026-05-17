@@ -15,6 +15,7 @@ const AdminProducts = () => {
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
+    mrp_price: '',
     price: '',
     unit: 'kg',
     category_id: '',
@@ -125,6 +126,7 @@ const AdminProducts = () => {
     setFormData({
       name: '',
       slug: '',
+      mrp_price: '',
       price: '',
       unit: 'kg',
       category_id: '',
@@ -143,6 +145,7 @@ const AdminProducts = () => {
     setFormData({
       name: product.name,
       slug: product.slug,
+      mrp_price: product.mrp_price || '',
       price: product.price,
       unit: product.unit,
       category_id: product.category_id,
@@ -160,7 +163,7 @@ const AdminProducts = () => {
     <div className="flex bg-slate-50 min-h-screen">
       <AdminSidebar />
       
-      <main className="flex-grow p-10 overflow-y-auto">
+      <main className="flex-grow p-4 md:p-10 overflow-y-auto w-full">
         <header className="flex justify-between items-center mb-12">
           <div>
             <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Manage Products</h1>
@@ -208,6 +211,9 @@ const AdminProducts = () => {
                     </td>
                     <td className="px-10 py-6 text-center">
                       <div className="flex flex-col items-center">
+                        {product.mrp_price && product.mrp_price > product.price && (
+                          <span className="text-[10px] line-through text-slate-400 font-bold mb-0.5">₹{product.mrp_price}</span>
+                        )}
                         <span className="font-black text-slate-900 text-lg">₹{product.price}</span>
                         <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Per {product.unit}</span>
                       </div>
@@ -306,7 +312,11 @@ const AdminProducts = () => {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-black text-slate-900 uppercase tracking-widest">Price (₹)</label>
+                    <label className="text-sm font-black text-slate-900 uppercase tracking-widest">Actual Price (MRP ₹)</label>
+                    <input type="number" step="0.01" name="mrp_price" className="input" placeholder="0.00" value={formData.mrp_price} onChange={handleInputChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-black text-slate-900 uppercase tracking-widest">Selling Price (₹)</label>
                     <input required type="number" step="0.01" name="price" className="input" placeholder="0.00" value={formData.price} onChange={handleInputChange} />
                   </div>
                   <div className="space-y-2">

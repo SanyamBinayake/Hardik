@@ -64,7 +64,14 @@ const ProductCard = ({ product }) => {
             <h3 className="text-lg font-bold text-slate-800 mb-1 group-hover:text-primary transition-colors truncate">
               {product.name}
             </h3>
-            <p className="text-slate-500 text-sm mb-4">₹{product.price} / {product.unit}</p>
+            
+            <div className="flex items-end space-x-2 mb-4">
+              <p className="text-primary font-black text-lg">₹{product.price}</p>
+              {product.mrp_price && product.mrp_price > product.price && (
+                <p className="text-slate-400 text-sm line-through font-bold mb-0.5">₹{product.mrp_price}</p>
+              )}
+              <span className="text-slate-400 text-xs font-bold mb-1">/ {product.unit}</span>
+            </div>
   
             <div className="flex items-center space-x-3">
               {!isOutOfStock ? (

@@ -73,3 +73,26 @@
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out forwards;
 }
+
+/* Google Translate UI Overrides */
+iframe[id=":1.container"],
+iframe[name="google_translate_banner_frame"],
+.goog-te-banner-frame,
+.skiptranslate > iframe,
+.VIpgJd-Zvi9od-aZ2wEe-wOHMyf,
+.VIpgJd-Zvi9od-ORHb-OEVmcd {
+  display: none !important;
+  visibility: hidden !important;
+} 
+body {
+  top: 0px !important; 
+  position: static !important;
+}
+#goog-gt-tt, .goog-te-balloon-frame {
+  display: none !important;
+  box-shadow: none !important;
+}
+.goog-text-highlight {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}

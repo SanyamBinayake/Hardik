@@ -114,6 +114,9 @@ const ProductDetails = () => {
             <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">{product.name}</h1>
             <div className="flex items-end space-x-3 mb-6">
               <span className="text-4xl font-bold text-slate-900">₹{product.price}</span>
+              {product.mrp_price && product.mrp_price > product.price && (
+                <span className="text-xl text-slate-400 line-through font-bold mb-1">₹{product.mrp_price}</span>
+              )}
               <span className="text-slate-500 text-lg mb-1">/ {product.unit}</span>
             </div>
             <p className="text-slate-600 leading-relaxed text-lg italic border-l-4 border-primary/30 pl-6">

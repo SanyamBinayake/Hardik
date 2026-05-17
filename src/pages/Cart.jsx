@@ -13,6 +13,15 @@ const Cart = () => {
     getFinalAmount 
   } = useCartStore()
 
+  const getTotalSavings = () => {
+    return items.reduce((total, item) => {
+      if (item.mrp_price && item.mrp_price > item.price) {
+        return total + ((item.mrp_price - item.price) * item.quantity);
+      }
+      return total;
+    }, 0);
+  }
+
   if (items.length === 0) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-32 text-center">
@@ -50,7 +59,13 @@ const Cart = () => {
               
               <div className="flex-grow text-center sm:text-left">
                 <h3 className="text-xl font-bold text-slate-900 mb-1">{item.name}</h3>
-                <p className="text-slate-500 mb-4">₹{item.price} / {item.unit}</p>
+                <div className="flex items-center justify-center sm:justify-start space-x-2 mb-4">
+                  <p className="text-slate-900 font-bold">₹{item.price}</p>
+                  {item.mrp_price && item.mrp_price > item.price && (
+                    <p className="text-slate-400 text-sm line-through">₹{item.mrp_price}</p>
+                  )}
+                  <p className="text-slate-500 text-sm">/ {item.unit}</p>
+                </div>
                 <div className="flex items-center justify-center sm:justify-start space-x-6">
                   <div className="flex items-center border border-slate-200 rounded-xl p-1 bg-slate-50">
                     <button
@@ -93,6 +108,14 @@ const Cart = () => {
                 <span>Subtotal</span>
                 <span className="font-semibold text-slate-900">₹{getTotalPrice().toFixed(2)}</span>
               </div>
+              
+              {getTotalSavings() > 0 && (
+                <div className="flex justify-between text-emerald-600 font-bold bg-emerald-50 p-2 rounded-lg">
+                  <span>Total Savings</span>
+                  <span>-₹{getTotalSavings().toFixed(2)}</span>
+                </div>
+              )}
+
               <div className="flex justify-between text-slate-600">
                 <span className="flex items-center">
                   Delivery Charge

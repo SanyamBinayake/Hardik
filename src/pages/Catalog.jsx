@@ -20,6 +20,14 @@ const Catalog = () => {
     fetchProducts()
   }, [selectedCategory, searchQuery])
 
+  // Sync URL search params with local state (for Navbar search)
+  useEffect(() => {
+    const urlSearch = searchParams.get('search')
+    if (urlSearch !== null && urlSearch !== searchQuery) {
+      setSearchQuery(urlSearch)
+    }
+  }, [searchParams])
+
   const fetchCategories = async () => {
     const { data } = await supabase.from('categories').select('*')
     if (data) setCategories(data)

@@ -52,7 +52,7 @@ const AdminOrders = () => {
     <div className="flex bg-slate-50 min-h-screen">
       <AdminSidebar />
       
-      <main className="flex-grow p-10 overflow-y-auto">
+      <main className="flex-grow p-4 md:p-10 overflow-y-auto w-full">
         <header className="flex justify-between items-center mb-12">
           <div>
             <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Customer Orders</h1>
