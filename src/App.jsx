@@ -16,10 +16,12 @@ import AdminProducts from './pages/Admin/Products'
 import AdminOrders from './pages/Admin/Orders'
 import AdminOffers from './pages/Admin/Offers'
 import AdminCategories from './pages/Admin/Categories'
+import ScrollToTop from './components/ScrollToTop'
 
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <div className="flex flex-col min-h-screen">
         <Navbar />
         <main className="flex-grow">
