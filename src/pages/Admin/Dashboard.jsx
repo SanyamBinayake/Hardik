@@ -12,10 +12,13 @@ import {
   Grid,
   CheckCircle2,
   TrendingUp,
-  Users
+  Users,
+  Store,
+  Truck
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import AdminSidebar from '../../components/Admin/AdminSidebar'
+import { useStoreSettings } from '../../store/useStoreSettings'
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -28,6 +31,7 @@ const AdminDashboard = () => {
   const [recentOrders, setRecentOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
+  const { isOpen, isDeliveryAvailable, updateSettings } = useStoreSettings()
 
   useEffect(() => {
     checkAdmin()
@@ -112,6 +116,45 @@ const AdminDashboard = () => {
             </Link>
           </div>
         </header>
+
+        {/* Store Controls */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          <div className="card p-6 flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className={`p-4 rounded-2xl ${isOpen ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                <Store className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900">Store Status</h3>
+                <p className="text-sm text-slate-500">{isOpen ? 'Accepting Orders' : 'Currently Closed'}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => updateSettings({ isOpen: !isOpen })}
+              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${isOpen ? 'bg-emerald-500' : 'bg-slate-300'}`}
+            >
+              <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${isOpen ? 'translate-x-7' : 'translate-x-1'}`} />
+            </button>
+          </div>
+
+          <div className="card p-6 flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className={`p-4 rounded-2xl ${isDeliveryAvailable ? 'bg-blue-100 text-blue-600' : 'bg-amber-100 text-amber-600'}`}>
+                <Truck className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900">Delivery Status</h3>
+                <p className="text-sm text-slate-500">{isDeliveryAvailable ? 'Delivery Available' : 'Pickup Only'}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => updateSettings({ isDeliveryAvailable: !isDeliveryAvailable })}
+              className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${isDeliveryAvailable ? 'bg-blue-500' : 'bg-slate-300'}`}
+            >
+              <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${isDeliveryAvailable ? 'translate-x-7' : 'translate-x-1'}`} />
+            </button>
+          </div>
+        </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">

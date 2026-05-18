@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Truck, CheckCircle2, AlertCircle, ShoppingBag, CreditCard } from 'lucide-react'
 import { useCartStore } from '../store/useCartStore'
+import { useStoreSettings } from '../store/useStoreSettings'
 import { supabase } from '../lib/supabase'
 import { toast } from 'react-hot-toast'
 
@@ -9,6 +10,7 @@ const Checkout = () => {
   const { items, getTotalPrice, getDeliveryCharge, getFinalAmount, clearCart } = useCartStore()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  const { isOpen, isDeliveryAvailable } = useStoreSettings()
 
   const [formData, setFormData] = useState({
     customerName: '',
@@ -20,11 +22,23 @@ const Checkout = () => {
 
   // Load saved details on mount
   useEffect(() => {
+    if (!isOpen) {
+      toast.error('Store is currently closed. Cannot proceed to checkout.')
+      navigate('/cart')
+      return
+    }
+
+    if (!isDeliveryAvailable) {
+      toast.error('Delivery is temporarily unavailable. We are not accepting orders at this time.')
+      navigate('/cart')
+      return
+    }
+
     const savedData = localStorage.getItem('hp_customer_data')
     if (savedData) {
       setFormData(prev => ({ ...prev, ...JSON.parse(savedData) }))
     }
-  }, [])
+  }, [isOpen, isDeliveryAvailable, navigate])
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })

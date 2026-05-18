@@ -17,8 +17,25 @@ import AdminOrders from './pages/Admin/Orders'
 import AdminOffers from './pages/Admin/Offers'
 import AdminCategories from './pages/Admin/Categories'
 import ScrollToTop from './components/ScrollToTop'
+import { useStoreSettings } from './store/useStoreSettings'
+import { useEffect } from 'react'
 
 function App() {
+  const { fetchSettings, subscribeToChanges } = useStoreSettings()
+
+  useEffect(() => {
+    // Clear any expired Supabase auth tokens that might cause 401 errors
+    // since this app doesn't use Supabase Auth for the admin panel.
+    localStorage.removeItem('sb-iyxjmyumfpmroqdngdsy-auth-token')
+    
+    fetchSettings()
+    const subscription = subscribeToChanges()
+    
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
   return (
     <Router>
       <ScrollToTop />

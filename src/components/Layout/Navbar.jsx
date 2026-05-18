@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ShoppingCart, Search, User, Menu, X, MapPin, Globe, ChevronDown } from 'lucide-react'
 import { useCartStore } from '../../store/useCartStore'
+import { useStoreSettings } from '../../store/useStoreSettings'
 import { supabase } from '../../lib/supabase'
 
 const Navbar = () => {
@@ -14,6 +15,7 @@ const Navbar = () => {
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false)
   const navigate = useNavigate()
   const { items } = useCartStore()
+  const { isOpen } = useStoreSettings()
 
   const cartCount = items.reduce((total, item) => total + item.quantity, 0)
 
@@ -73,8 +75,21 @@ const Navbar = () => {
               <ShoppingCart className="w-6 h-6 text-white" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-xl font-bold text-slate-900 leading-tight">Hem Padmavati</h1>
-              <p className="text-[10px] uppercase tracking-widest text-primary font-bold">Provision Store</p>
+              <div className="flex items-center space-x-2">
+                <h1 className="text-xl font-bold text-slate-900 leading-tight">Hem Padmavati</h1>
+                {isOpen ? (
+                  <span className="flex items-center text-[9px] uppercase font-black tracking-wider text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse" />
+                    Open
+                  </span>
+                ) : (
+                  <span className="flex items-center text-[9px] uppercase font-black tracking-wider text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 mr-1" />
+                    Closed
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] uppercase tracking-widest text-primary font-bold mt-0.5">Provision Store</p>
             </div>
           </Link>
 

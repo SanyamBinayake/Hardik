@@ -1,9 +1,11 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
-import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, Truck } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, Truck, AlertCircle } from 'lucide-react'
 import { useCartStore } from '../store/useCartStore'
+import { useStoreSettings } from '../store/useStoreSettings'
 
 const Cart = () => {
+  const navigate = useNavigate()
   const { 
     items, 
     removeItem, 
@@ -12,6 +14,7 @@ const Cart = () => {
     getDeliveryCharge, 
     getFinalAmount 
   } = useCartStore()
+  const { isOpen, isDeliveryAvailable } = useStoreSettings()
 
   const getTotalSavings = () => {
     return items.reduce((total, item) => {
@@ -140,13 +143,27 @@ const Cart = () => {
               <p className="text-xs text-slate-400 mt-2">Inclusive of all taxes</p>
             </div>
 
-            <Link 
-              to="/checkout" 
-              className="btn btn-primary w-full py-4 text-lg shadow-xl shadow-emerald-100 group"
+            <button 
+              onClick={() => navigate('/checkout')}
+              disabled={!isOpen || !isDeliveryAvailable}
+              className={`btn w-full py-4 text-lg group ${isOpen && isDeliveryAvailable ? 'btn-primary shadow-xl shadow-emerald-100' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}`}
             >
-              Checkout
-              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
+              {!isOpen ? 'Store is Closed' : !isDeliveryAvailable ? 'Delivery Unavailable' : 'Proceed to Checkout'}
+              {isOpen && isDeliveryAvailable && <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />}
+            </button>
+            
+            {!isOpen && (
+              <p className="text-xs text-red-500 font-bold mt-3 text-center bg-red-50 p-2 rounded-lg border border-red-100">
+                Sorry, the store is currently closed. We are not accepting orders at this time.
+              </p>
+            )}
+            
+            {isOpen && !isDeliveryAvailable && (
+              <p className="text-xs text-amber-600 font-bold mt-3 text-center bg-amber-50 p-2 rounded-lg border border-amber-100 flex items-center justify-center">
+                <AlertCircle className="w-4 h-4 mr-1" />
+                Delivery is temporarily unavailable.
+              </p>
+            )}
 
             <div className="mt-6 flex items-center justify-center space-x-2 text-slate-400 text-xs">
               <span className="flex items-center">
