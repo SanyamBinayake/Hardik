@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { Search, Package, Truck, CheckCircle2, Clock, MapPin, ChevronRight, ShoppingBag } from 'lucide-react'
+import { Search, Package, Truck, CheckCircle2, Clock, MapPin, ChevronRight, ShoppingBag, MessageSquare } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const TrackOrder = () => {
@@ -100,8 +101,15 @@ const TrackOrder = () => {
                     <div className="text-right">
                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Placed On</p>
                       <p className="font-bold text-slate-700">
-                        {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </p>
+  {new Date(order.created_at).toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  })}
+</p>
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Total Amount</p>
@@ -166,6 +174,27 @@ const TrackOrder = () => {
                       ))}
                     </div>
                   </div>
+
+                  {/* Leave Feedback Prompt (only if delivered) */}
+                  {order.status === 'delivered' && (
+                    <div className="mx-8 mb-8 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50 flex flex-col sm:flex-row justify-between items-center gap-4">
+                      <div className="flex items-center space-x-3 text-left">
+                        <div className="bg-white p-2 rounded-xl text-primary border border-emerald-100 shadow-sm shrink-0">
+                          <MessageSquare className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-800">Order Delivered! How was everything?</p>
+                          <p className="text-[10px] text-slate-550 text-slate-500 font-medium">Please take a moment to share your feedback with us.</p>
+                        </div>
+                      </div>
+                      <Link 
+                        to="/feedback" 
+                        className="text-xs font-black uppercase tracking-wider text-primary hover:text-emerald-700 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto text-center"
+                      >
+                        Write Review
+                      </Link>
+                    </div>
+                  )}
                 </div>
               ))
             ) : (

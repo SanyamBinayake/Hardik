@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { useStoreSettings } from './useStoreSettings'
 
 export const useCartStore = create(
   persist(
@@ -42,13 +43,37 @@ export const useCartStore = create(
           0
         )
       },
+      getBogoDiscount: () => {
+        const { activeFlashSales } = useStoreSettings.getState()
+        if (!activeFlashSales || activeFlashSales.length === 0) return 0
+
+        return get().items.reduce((discount, item) => {
+          const hasFlashSale = activeFlashSales.some(
+            (sale) => sale.product_id === item.id
+          )
+          if (hasFlashSale) {
+            const freeQty = item.quantity - Math.ceil(item.quantity / 2)
+            return discount + (freeQty * item.price)
+          }
+          return discount
+        }, 0)
+      },
       getDeliveryCharge: () => {
-        const total = get().getTotalPrice()
+        const total = get().getTotalPrice() - get().getBogoDiscount()
         if (total === 0) return 0
-        return total > 500 ? 0 : 30 // Free delivery over 500
+        
+        const { isDeliveryAvailable, deliveryChargeEnabled, freeDeliveryThreshold, deliveryFee } = useStoreSettings.getState()
+        
+        // If delivery is disabled globally, no charge is applied
+        if (!isDeliveryAvailable) return 0
+        
+        // If delivery charges are disabled by admin, delivery is free
+        if (!deliveryChargeEnabled) return 0
+        
+        return total >= freeDeliveryThreshold ? 0 : deliveryFee
       },
       getFinalAmount: () => {
-        return get().getTotalPrice() + get().getDeliveryCharge()
+        return get().getTotalPrice() - get().getBogoDiscount() + get().getDeliveryCharge()
       },
     }),
     {

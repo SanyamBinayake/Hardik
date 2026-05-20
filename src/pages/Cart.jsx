@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, Truck, AlertCircle } from 'lucide-react'
+import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, Truck, AlertCircle, Zap } from 'lucide-react'
 import { useCartStore } from '../store/useCartStore'
 import { useStoreSettings } from '../store/useStoreSettings'
 
@@ -11,10 +11,11 @@ const Cart = () => {
     removeItem, 
     updateQuantity, 
     getTotalPrice, 
+    getBogoDiscount,
     getDeliveryCharge, 
     getFinalAmount 
   } = useCartStore()
-  const { isOpen, isDeliveryAvailable } = useStoreSettings()
+  const { isOpen, isDeliveryAvailable, deliveryChargeEnabled, freeDeliveryThreshold, activeFlashSales } = useStoreSettings()
 
   const getTotalSavings = () => {
     return items.reduce((total, item) => {
@@ -61,7 +62,21 @@ const Cart = () => {
               </div>
               
               <div className="flex-grow text-center sm:text-left">
-                <h3 className="text-xl font-bold text-slate-900 mb-1">{item.name}</h3>
+                <h3 className="text-xl font-bold text-slate-900 mb-1 flex items-center flex-wrap gap-2 justify-center sm:justify-start">
+                  {item.name}
+                  {activeFlashSales.some((sale) => sale.product_id === item.id) && (
+                    <span className="inline-flex items-center bg-rose-100 text-rose-700 text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
+                      ⚡ BOGO
+                    </span>
+                  )}
+                </h3>
+                {activeFlashSales.some((sale) => sale.product_id === item.id) && (
+                  <p className="text-[10px] text-rose-500 font-bold mb-2">
+                    {item.quantity === 1 
+                      ? "Buy 1 more to get 1 free!" 
+                      : `Includes ${item.quantity - Math.ceil(item.quantity / 2)} free item${(item.quantity - Math.ceil(item.quantity / 2)) > 1 ? 's' : ''}!`}
+                  </p>
+                )}
                 <div className="flex items-center justify-center sm:justify-start space-x-2 mb-4">
                   <p className="text-slate-900 font-bold">₹{item.price}</p>
                   {item.mrp_price && item.mrp_price > item.price && (
@@ -112,6 +127,16 @@ const Cart = () => {
                 <span className="font-semibold text-slate-900">₹{getTotalPrice().toFixed(2)}</span>
               </div>
               
+              {getBogoDiscount() > 0 && (
+                <div className="flex justify-between text-rose-600 font-bold bg-rose-50 p-2.5 rounded-xl border border-rose-100/50">
+                  <span className="flex items-center">
+                    <Zap className="w-3.5 h-3.5 mr-1 text-rose-500 fill-rose-500 animate-pulse" />
+                    Flash Sale BOGO
+                  </span>
+                  <span>-₹{getBogoDiscount().toFixed(2)}</span>
+                </div>
+              )}
+
               {getTotalSavings() > 0 && (
                 <div className="flex justify-between text-emerald-600 font-bold bg-emerald-50 p-2 rounded-lg">
                   <span>Total Savings</span>
@@ -128,9 +153,9 @@ const Cart = () => {
                   {getDeliveryCharge() === 0 ? 'FREE' : `₹${getDeliveryCharge().toFixed(2)}`}
                 </span>
               </div>
-              {getDeliveryCharge() > 0 && (
+              {getDeliveryCharge() > 0 && deliveryChargeEnabled && isDeliveryAvailable && (
                 <p className="text-[10px] text-primary font-bold uppercase tracking-wider bg-primary/5 p-2 rounded-lg border border-primary/10">
-                  Shop for ₹{500 - getTotalPrice()} more for FREE delivery!
+                  Shop for ₹{(freeDeliveryThreshold - (getTotalPrice() - getBogoDiscount())).toFixed(2)} more for FREE delivery!
                 </p>
               )}
             </div>

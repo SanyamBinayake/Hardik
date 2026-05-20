@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { ShoppingBag, Eye, CheckCircle2, Truck, XCircle, Search, Clock, MapPin, User, Calendar } from 'lucide-react'
+import { ShoppingBag, Eye, CheckCircle2, Truck, XCircle, Search, Clock, MapPin, User, Calendar, Download, DollarSign } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import AdminSidebar from '../../components/Admin/AdminSidebar'
 
 const AdminOrders = () => {
-  const [orders, setOrders] = useState([])
+  const [allOrders, setAllOrders] = useState([])
+  const [filteredOrders, setFilteredOrders] = useState([])
+  const [filterPeriod, setFilterPeriod] = useState('1day') // '1day' | '7days' | 'monthly' | 'all' | 'custom'
+  const [customStart, setCustomStart] = useState('')
+  const [customEnd, setCustomEnd] = useState('')
+  const [stats, setStats] = useState({ totalOrders: 0, revenue: 0, pending: 0, delivered: 0 })
   const [loading, setLoading] = useState(true)
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -23,8 +28,75 @@ const AdminOrders = () => {
       .from('orders')
       .select('*, order_items(*, products(name))')
       .order('created_at', { ascending: false })
-    if (data) setOrders(data)
+    if (data) {
+      setAllOrders(data)
+    }
     setLoading(false)
+  }
+
+  useEffect(() => {
+    const filtered = allOrders.filter(order => {
+      const orderDate = new Date(order.created_at)
+      if (filterPeriod === '1day') {
+        const today = new Date()
+        return orderDate.toDateString() === today.toDateString()
+      } else if (filterPeriod === '7days') {
+        const sevenDaysAgo = new Date()
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+        return orderDate >= sevenDaysAgo
+      } else if (filterPeriod === 'monthly') {
+        const thirtyDaysAgo = new Date()
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+        return orderDate >= thirtyDaysAgo
+      } else if (filterPeriod === 'custom') {
+        const start = customStart ? new Date(customStart) : null
+        if (start) {
+          const s = new Date(start)
+          s.setHours(0,0,0,0)
+          if (orderDate < s) return false
+        }
+        const end = customEnd ? new Date(customEnd) : null
+        if (end) {
+          const e = new Date(end)
+          e.setHours(23,59,59,999)
+          if (orderDate > e) return false
+        }
+        return true
+      }
+      return true // 'all'
+    })
+
+    setFilteredOrders(filtered)
+
+    // Calculate metrics
+    const totalOrders = filtered.length
+    const revenue = filtered.reduce((sum, o) => sum + Number(o.total_amount), 0)
+    const pending = filtered.filter(o => o.status === 'pending').length
+    const delivered = filtered.filter(o => o.status === 'delivered').length
+
+    setStats({ totalOrders, revenue, pending, delivered })
+  }, [allOrders, filterPeriod, customStart, customEnd])
+
+  const downloadCSV = (dataToDownload, filename = 'orders_report.csv') => {
+    const headers = ['Order ID', 'Date', 'Customer Name', 'Phone Number', 'Status', 'Amount']
+    const rows = dataToDownload.map(order => [
+      order.id.slice(0, 8).toUpperCase(),
+      new Date(order.created_at).toLocaleString('en-IN'),
+      order.customer_name,
+      order.phone_number,
+      order.status,
+      order.total_amount
+    ])
+    
+    const csvString = [headers.join(','), ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\n')
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.setAttribute("href", url)
+    link.setAttribute("download", filename)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   const updateOrderStatus = async (id, status) => {
@@ -60,6 +132,101 @@ const AdminOrders = () => {
           </div>
         </header>
 
+        {/* Date Filter & CSV Download Controls */}
+        <div className="card p-6 mb-8 bg-white border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 rounded-3xl">
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { id: '1day', label: 'Today' },
+              { id: '7days', label: 'Last 7 Days' },
+              { id: 'monthly', label: 'Monthly (30d)' },
+              { id: 'all', label: 'All Time' },
+              { id: 'custom', label: 'Custom' }
+            ].map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setFilterPeriod(p.id)}
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  filterPeriod === p.id 
+                    ? 'bg-primary text-white shadow-md shadow-emerald-100' 
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {filterPeriod === 'custom' && (
+            <div className="flex flex-wrap items-center gap-3 animate-fade-in">
+              <input
+                type="date"
+                className="input py-1.5 px-3 bg-slate-50 border-slate-200 text-xs font-semibold rounded-xl"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+              />
+              <span className="text-slate-400 text-xs font-bold">to</span>
+              <input
+                type="date"
+                className="input py-1.5 px-3 bg-slate-50 border-slate-200 text-xs font-semibold rounded-xl"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+              />
+            </div>
+          )}
+
+          <button
+            onClick={() => downloadCSV(filteredOrders, `orders_${filterPeriod}_report.csv`)}
+            disabled={filteredOrders.length === 0}
+            className="btn btn-secondary py-2.5 px-5 text-xs font-black uppercase tracking-widest border border-slate-200 hover:bg-slate-100 text-slate-700 disabled:opacity-50 flex items-center gap-2 rounded-xl"
+          >
+            <Download className="w-4 h-4 text-slate-500" />
+            Download CSV
+          </button>
+        </div>
+
+        {/* Analytics mini cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <div className="card p-6 flex items-center space-x-5 border border-slate-100 shadow-sm bg-white rounded-[2rem]">
+            <div className="p-4 rounded-2xl bg-emerald-100">
+              <ShoppingBag className="w-8 h-8 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Orders</p>
+              <p className="text-2xl font-black text-slate-900 tracking-tight">{stats.totalOrders}</p>
+            </div>
+          </div>
+
+          <div className="card p-6 flex items-center space-x-5 border border-slate-100 shadow-sm bg-white rounded-[2rem]">
+            <div className="p-4 rounded-2xl bg-amber-100">
+              <DollarSign className="w-8 h-8 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Revenue</p>
+              <p className="text-2xl font-black text-slate-900 tracking-tight">₹{stats.revenue.toLocaleString()}</p>
+            </div>
+          </div>
+
+          <div className="card p-6 flex items-center space-x-5 border border-slate-100 shadow-sm bg-white rounded-[2rem]">
+            <div className="p-4 rounded-2xl bg-blue-100">
+              <Clock className="w-8 h-8 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Pending</p>
+              <p className="text-2xl font-black text-slate-900 tracking-tight">{stats.pending}</p>
+            </div>
+          </div>
+
+          <div className="card p-6 flex items-center space-x-5 border border-slate-100 shadow-sm bg-white rounded-[2rem]">
+            <div className="p-4 rounded-2xl bg-indigo-100">
+              <CheckCircle2 className="w-8 h-8 text-indigo-600" />
+            </div>
+            <div>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Completed</p>
+              <p className="text-2xl font-black text-slate-900 tracking-tight">{stats.delivered}</p>
+            </div>
+          </div>
+        </div>
+
         <div className="card border-none shadow-premium bg-white">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -74,7 +241,7 @@ const AdminOrders = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {orders.map(order => (
+                {filteredOrders.map(order => (
                   <tr key={order.id} className="hover:bg-slate-50/80 transition-all duration-300 group">
                     <td className="px-10 py-6">
                       <span className="font-mono text-xs font-black text-slate-300 group-hover:text-primary transition-colors tracking-widest">
@@ -112,8 +279,14 @@ const AdminOrders = () => {
                     <td className="px-10 py-6 text-center">
                       <div className="flex flex-col items-center">
                         <Calendar className="w-4 h-4 text-slate-300 mb-1" />
-                        <span className="text-xs font-bold text-slate-500">
-                          {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                        <span className="text-xs font-bold text-slate-500 text-center block">
+                          {new Date(order.created_at).toLocaleString('en-IN', { 
+                            day: '2-digit', 
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          })}
                         </span>
                       </div>
                     </td>

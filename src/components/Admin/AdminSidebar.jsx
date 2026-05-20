@@ -11,7 +11,9 @@ import {
   Tag,
   Layout,
   Menu,
-  X
+  X,
+  MessageSquare,
+  Zap
 } from 'lucide-react'
 
 const AdminSidebar = () => {
@@ -35,6 +37,8 @@ const AdminSidebar = () => {
     { name: 'Categories', icon: Layout, path: '/admin/categories' },
     { name: 'Orders', icon: ShoppingBag, path: '/admin/orders' },
     { name: 'Offers', icon: Tag, path: '/admin/offers' },
+    { name: 'Feedback', icon: MessageSquare, path: '/admin/feedback' },
+    { name: 'Flash Sales', icon: Zap, path: '/admin/flash-sales' },
   ]
 
   return (

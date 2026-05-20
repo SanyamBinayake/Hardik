@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { CheckCircle2, ShoppingBag, ArrowRight, Truck } from 'lucide-react'
+import { CheckCircle2, ShoppingBag, ArrowRight, Truck, MessageSquare } from 'lucide-react'
 
 const Success = () => {
   const location = useLocation()
@@ -28,7 +28,7 @@ const Success = () => {
           Thank you for shopping with Hem Padmavati. Your order <span className="font-bold text-slate-900">#{orderId.slice(0, 8)}</span> has been received and is being processed.
         </p>
 
-        <div className="bg-white card p-8 max-w-md mx-auto mb-12 flex items-center justify-between">
+        <div className="bg-white card p-8 max-w-md mx-auto mb-6 flex items-center justify-between">
           <div className="text-left">
             <h3 className="font-bold text-slate-900">Estimated Delivery</h3>
             <p className="text-slate-500 text-sm">Within 30 Minutes</p>
@@ -36,6 +36,25 @@ const Success = () => {
           <div className="bg-primary/10 p-4 rounded-2xl">
             <Truck className="w-6 h-6 text-primary" />
           </div>
+        </div>
+
+        {/* Feedback Promo Card */}
+        <div className="card p-6 max-w-md mx-auto mb-12 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 flex items-center justify-between">
+          <div className="flex items-center space-x-3 text-left">
+            <div className="bg-white p-2.5 rounded-xl shadow-sm border border-slate-100 text-primary">
+              <MessageSquare className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-800 text-sm leading-snug">Help us improve!</h4>
+              <p className="text-[10px] text-slate-500 font-medium">How was your shopping experience today?</p>
+            </div>
+          </div>
+          <Link 
+            to="/feedback" 
+            className="text-xs font-black uppercase tracking-wider text-primary hover:text-emerald-700 transition-all bg-white px-4 py-2.5 rounded-xl shadow-sm border border-slate-100 hover:scale-105 active:scale-95"
+          >
+            Review Us
+          </Link>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

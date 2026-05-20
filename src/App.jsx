@@ -16,6 +16,9 @@ import AdminProducts from './pages/Admin/Products'
 import AdminOrders from './pages/Admin/Orders'
 import AdminOffers from './pages/Admin/Offers'
 import AdminCategories from './pages/Admin/Categories'
+import Feedback from './pages/Feedback'
+import FeedbackPanel from './pages/Admin/FeedbackPanel'
+import FlashSalePanel from './pages/Admin/FlashSalePanel'
 import ScrollToTop from './components/ScrollToTop'
 import { useStoreSettings } from './store/useStoreSettings'
 import { useEffect } from 'react'
@@ -58,6 +61,9 @@ function App() {
             <Route path="/admin/orders" element={<AdminOrders />} />
             <Route path="/admin/offers" element={<AdminOffers />} />
             <Route path="/admin/categories" element={<AdminCategories />} />
+            <Route path="/admin/feedback" element={<FeedbackPanel />} />
+            <Route path="/admin/flash-sales" element={<FlashSalePanel />} />
+            <Route path="/feedback" element={<Feedback />} />
           </Routes>
         </main>
         <Footer />

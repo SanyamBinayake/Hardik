@@ -7,7 +7,14 @@ import { supabase } from '../lib/supabase'
 import { toast } from 'react-hot-toast'
 
 const Checkout = () => {
-  const { items, getTotalPrice, getDeliveryCharge, getFinalAmount, clearCart } = useCartStore()
+  const { 
+    items, 
+    clearCart, 
+    getTotalPrice, 
+    getBogoDiscount,
+    getDeliveryCharge, 
+    getFinalAmount 
+  } = useCartStore()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const { isOpen, isDeliveryAvailable } = useStoreSettings()
@@ -101,6 +108,8 @@ const Checkout = () => {
       }
 
       // 4. Generate WhatsApp Message
+      const bogoSavings = getBogoDiscount()
+      const bogoSavingsText = bogoSavings > 0 ? `BOGO Discount: -Rs. ${bogoSavings.toFixed(2)}\n` : ''
       const message = encodeURIComponent(
         `NEW ORDER - HEM PADMAVATI STORE\n` +
         `------------------------------------\n\n` +
@@ -108,6 +117,9 @@ const Checkout = () => {
         `Contact: ${formData.phoneNumber}\n` +
         `Address: ${formData.address}, ${formData.pincode}\n\n` +
         `ORDER DETAILS:\n${items.map(i => `- ${i.name} (x${i.quantity})`).join('\n')}\n\n` +
+        `Subtotal: Rs. ${getTotalPrice().toFixed(2)}\n` +
+        bogoSavingsText +
+        `Delivery: Rs. ${getDeliveryCharge() === 0 ? 'FREE' : getDeliveryCharge().toFixed(2)}\n` +
         `Total Amount: Rs. ${getFinalAmount().toFixed(2)}\n` +
         `Notes: ${formData.orderNotes || 'None'}\n\n` +
         `------------------------------------\n` +
@@ -269,6 +281,12 @@ const Checkout = () => {
                 <span>Subtotal</span>
                 <span>₹{getTotalPrice().toFixed(2)}</span>
               </div>
+              {getBogoDiscount() > 0 && (
+                <div className="flex justify-between text-rose-600 text-sm font-bold">
+                  <span>Flash Sale BOGO</span>
+                  <span>-₹{getBogoDiscount().toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-slate-600 text-sm">
                 <span>Delivery Charge</span>
                 <span className={getDeliveryCharge() === 0 ? 'text-primary font-bold' : ''}>

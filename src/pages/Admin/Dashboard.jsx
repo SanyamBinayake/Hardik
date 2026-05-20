@@ -14,7 +14,8 @@ import {
   TrendingUp,
   Users,
   Store,
-  Truck
+  Truck,
+  Download
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import AdminSidebar from '../../components/Admin/AdminSidebar'
@@ -28,10 +29,50 @@ const AdminDashboard = () => {
     delivered: 0,
     totalProducts: 0
   })
+  const [allOrders, setAllOrders] = useState([])
+  const [filteredOrders, setFilteredOrders] = useState([])
+  const [filterPeriod, setFilterPeriod] = useState('1day') // '1day' | '7days' | 'monthly' | 'all' | 'custom'
+  const [customStart, setCustomStart] = useState('')
+  const [customEnd, setCustomEnd] = useState('')
+  const [totalProductsCount, setTotalProductsCount] = useState(0)
   const [recentOrders, setRecentOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
-  const { isOpen, isDeliveryAvailable, updateSettings } = useStoreSettings()
+  const { 
+    isOpen, 
+    isDeliveryAvailable, 
+    deliveryChargeEnabled, 
+    freeDeliveryThreshold, 
+    deliveryFee, 
+    updateSettings 
+  } = useStoreSettings()
+
+  const [thresholdInput, setThresholdInput] = useState('')
+  const [feeInput, setFeeInput] = useState('')
+
+  // Sync inputs with store settings when settings are fetched
+  useEffect(() => {
+    if (freeDeliveryThreshold !== undefined) setThresholdInput(freeDeliveryThreshold.toString())
+    if (deliveryFee !== undefined) setFeeInput(deliveryFee.toString())
+  }, [freeDeliveryThreshold, deliveryFee])
+
+  const handleThresholdSave = () => {
+    const val = parseFloat(thresholdInput)
+    if (!isNaN(val) && val >= 0) {
+      updateSettings({ freeDeliveryThreshold: val })
+    } else {
+      setThresholdInput(freeDeliveryThreshold ? freeDeliveryThreshold.toString() : '500')
+    }
+  }
+
+  const handleFeeSave = () => {
+    const val = parseFloat(feeInput)
+    if (!isNaN(val) && val >= 0) {
+      updateSettings({ deliveryFee: val })
+    } else {
+      setFeeInput(deliveryFee ? deliveryFee.toString() : '30')
+    }
+  }
 
   useEffect(() => {
     checkAdmin()
@@ -55,21 +96,88 @@ const AdminDashboard = () => {
       const orders = ordersRes.data || []
       const totalProducts = productsRes.count || 0
 
-      if (orders) {
-        const totalOrders = orders.length
-        const revenue = orders.reduce((sum, o) => sum + Number(o.total_amount), 0)
-        const pending = orders.filter(o => o.status === 'pending').length
-        const delivered = orders.filter(o => o.status === 'delivered').length
-
-        setStats({ totalOrders, revenue, pending, delivered, totalProducts })
-        const sortedOrders = [...orders].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-        setRecentOrders(sortedOrders.slice(0, 8))
-      }
+      setAllOrders(orders)
+      setTotalProductsCount(totalProducts)
     } catch (error) {
       console.error('Error fetching stats:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  useEffect(() => {
+    const filtered = allOrders.filter(order => {
+      const orderDate = new Date(order.created_at)
+      if (filterPeriod === '1day') {
+        const today = new Date()
+        return orderDate.toDateString() === today.toDateString()
+      } else if (filterPeriod === '7days') {
+        const sevenDaysAgo = new Date()
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+        return orderDate >= sevenDaysAgo
+      } else if (filterPeriod === 'monthly') {
+        const thirtyDaysAgo = new Date()
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+        return orderDate >= thirtyDaysAgo
+      } else if (filterPeriod === 'custom') {
+        const start = customStart ? new Date(customStart) : null
+        if (start) {
+          const s = new Date(start)
+          s.setHours(0,0,0,0)
+          if (orderDate < s) return false
+        }
+        const end = customEnd ? new Date(customEnd) : null
+        if (end) {
+          const e = new Date(end)
+          e.setHours(23,59,59,999)
+          if (orderDate > e) return false
+        }
+        return true
+      }
+      return true // 'all'
+    })
+
+    setFilteredOrders(filtered)
+
+    // Recalculate stats based on filtered orders
+    const totalOrders = filtered.length
+    const revenue = filtered.reduce((sum, o) => sum + Number(o.total_amount), 0)
+    const pending = filtered.filter(o => o.status === 'pending').length
+    const delivered = filtered.filter(o => o.status === 'delivered').length
+
+    setStats({
+      totalOrders,
+      revenue,
+      pending,
+      delivered,
+      totalProducts: totalProductsCount
+    })
+    
+    // Set recent orders as the sorted filtered orders (slice top 8)
+    const sortedOrders = [...filtered].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    setRecentOrders(sortedOrders.slice(0, 8))
+  }, [allOrders, filterPeriod, customStart, customEnd, totalProductsCount])
+
+  const downloadCSV = (dataToDownload, filename = 'sales_report.csv') => {
+    const headers = ['Order ID', 'Date', 'Customer Name', 'Phone Number', 'Status', 'Amount']
+    const rows = dataToDownload.map(order => [
+      order.id.slice(0, 8).toUpperCase(),
+      new Date(order.created_at).toLocaleString('en-IN'),
+      order.customer_name,
+      order.phone_number,
+      order.status,
+      order.total_amount
+    ])
+    
+    const csvString = [headers.join(','), ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\n')
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.setAttribute("href", url)
+    link.setAttribute("download", filename)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   const handleLogout = () => {
@@ -117,6 +225,58 @@ const AdminDashboard = () => {
           </div>
         </header>
 
+        {/* Date Filter & CSV Download Controls */}
+        <div className="card p-6 mb-8 bg-white border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 rounded-3xl">
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { id: '1day', label: 'Today' },
+              { id: '7days', label: 'Last 7 Days' },
+              { id: 'monthly', label: 'Monthly (30d)' },
+              { id: 'all', label: 'All Time' },
+              { id: 'custom', label: 'Custom' }
+            ].map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setFilterPeriod(p.id)}
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  filterPeriod === p.id 
+                    ? 'bg-primary text-white shadow-md shadow-emerald-100' 
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {filterPeriod === 'custom' && (
+            <div className="flex flex-wrap items-center gap-3 animate-fade-in">
+              <input
+                type="date"
+                className="input py-1.5 px-3 bg-slate-50 border-slate-200 text-xs font-semibold rounded-xl"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+              />
+              <span className="text-slate-400 text-xs font-bold">to</span>
+              <input
+                type="date"
+                className="input py-1.5 px-3 bg-slate-50 border-slate-200 text-xs font-semibold rounded-xl"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+              />
+            </div>
+          )}
+
+          <button
+            onClick={() => downloadCSV(filteredOrders, `sales_${filterPeriod}_report.csv`)}
+            disabled={filteredOrders.length === 0}
+            className="btn btn-secondary py-2.5 px-5 text-xs font-black uppercase tracking-widest border border-slate-200 hover:bg-slate-100 text-slate-700 disabled:opacity-50 flex items-center gap-2 rounded-xl"
+          >
+            <Download className="w-4 h-4 text-slate-500" />
+            Download CSV
+          </button>
+        </div>
+
         {/* Store Controls */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           <div className="card p-6 flex items-center justify-between">
@@ -156,12 +316,70 @@ const AdminDashboard = () => {
           </div>
         </div>
 
+        {/* Delivery Charge Configuration */}
+        <div className="card p-8 mb-12">
+          <div className="flex items-center space-x-2 mb-6 border-b border-slate-100 pb-4">
+            <Settings className="w-6 h-6 text-primary" />
+            <h2 className="text-xl font-bold text-slate-900">Delivery Charge Settings</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
+            {/* Toggle Enable Charge */}
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 h-[64px]">
+              <div>
+                <h4 className="font-bold text-slate-800 text-sm">Apply Delivery Charges</h4>
+                <p className="text-[10px] text-slate-500">Enable/disable delivery fees</p>
+              </div>
+              <button
+                onClick={() => updateSettings({ deliveryChargeEnabled: !deliveryChargeEnabled })}
+                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${deliveryChargeEnabled ? 'bg-primary' : 'bg-slate-300'}`}
+              >
+                <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${deliveryChargeEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+
+            {/* Free Delivery Threshold */}
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                Free Delivery Threshold (₹)
+              </label>
+              <input
+                type="number"
+                min="0"
+                disabled={!deliveryChargeEnabled}
+                className="input w-full bg-slate-50 border-slate-200 disabled:opacity-50 disabled:bg-slate-100 transition-all font-semibold"
+                value={thresholdInput}
+                onChange={(e) => setThresholdInput(e.target.value)}
+                onBlur={handleThresholdSave}
+                placeholder="e.g. 500"
+              />
+            </div>
+
+            {/* Standard Delivery Fee */}
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">
+                Standard Delivery Fee (₹)
+              </label>
+              <input
+                type="number"
+                min="0"
+                disabled={!deliveryChargeEnabled}
+                className="input w-full bg-slate-50 border-slate-200 disabled:opacity-50 disabled:bg-slate-100 transition-all font-semibold"
+                value={feeInput}
+                onChange={(e) => setFeeInput(e.target.value)}
+                onBlur={handleFeeSave}
+                placeholder="e.g. 30"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
-          <StatCard icon={ShoppingBag} title="Total Orders" value={stats.totalOrders} bgColor="bg-emerald-100" textColor="text-emerald-600" trend="+12% this week" />
+          <StatCard icon={ShoppingBag} title="Orders" value={stats.totalOrders} bgColor="bg-emerald-100" textColor="text-emerald-600" />
           <StatCard icon={Package} title="Total Products" value={stats.totalProducts} bgColor="bg-purple-100" textColor="text-purple-600" />
-          <StatCard icon={DollarSign} title="Total Revenue" value={`₹${stats.revenue.toLocaleString()}`} bgColor="bg-amber-100" textColor="text-amber-600" trend="+8% this month" />
-          <StatCard icon={Clock} title="Pending Tasks" value={stats.pending} bgColor="bg-blue-100" textColor="text-blue-600" />
+          <StatCard icon={DollarSign} title="Revenue" value={`₹${stats.revenue.toLocaleString()}`} bgColor="bg-amber-100" textColor="text-amber-600" />
+          <StatCard icon={Clock} title="Pending" value={stats.pending} bgColor="bg-blue-100" textColor="text-blue-600" />
           <StatCard icon={CheckCircle2} title="Completed" value={stats.delivered} bgColor="bg-indigo-100" textColor="text-indigo-600" />
         </div>
 
@@ -203,7 +421,14 @@ const AdminDashboard = () => {
                       </span>
                     </td>
                     <td className="px-10 py-6 text-xs font-bold text-slate-400">
-                      {new Date(order.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      {new Date(order.created_at).toLocaleString('en-IN', { 
+                        day: '2-digit', 
+                        month: 'short', 
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                      })}
                     </td>
                   </tr>
                 ))}
